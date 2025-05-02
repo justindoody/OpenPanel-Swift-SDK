@@ -40,7 +40,7 @@ internal class DeviceInfo {
         #if os(iOS)
         return getiOSUserAgent(getiOSInfo())
         #elseif os(macOS)
-        return getMacOSUserAgent(getMacOSInfo)
+        return getMacOSUserAgent(getMacOSInfo())
         #elseif os(tvOS)
         return getTvOSUserAgent(getTvOSInfo())
         #else
@@ -63,7 +63,7 @@ internal class DeviceInfo {
             model: "iPhone TEMP")
     }
 
-    private static func getiOSUserAgent() -> String {
+    private static func getiOSUserAgent(_ info: Info) -> String {
         if !isRunningInExtension() {
             let webView = WKWebView(frame: .zero)
             var userAgent = ""
