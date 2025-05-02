@@ -8,14 +8,14 @@
 
     echo "--- Building for macOS ---"
     # Builds for the native architecture of your Mac (Intel or Apple Silicon)
-    xcodebuild build -scheme OpenPanel-Swift-SDK -sdk macosx | xcpretty
+    xcodebuild build -scheme OpenPanel-Swift-SDK -sdk macosx | xcpretty && exit ${PIPESTATUS[0]}
 
     echo "--- Building for iOS Device (ARM64) ---"
     # Uses CODE_SIGNING_ALLOWED=NO to bypass code signing issues for compilation check
-    xcodebuild build -scheme OpenPanel-Swift-SDK -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty
+    xcodebuild build -scheme OpenPanel-Swift-SDK -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty && exit ${PIPESTATUS[0]}
 
     echo "--- Building for tvOS Device (ARM64) ---"
-    xcodebuild build -scheme OpenPanel-Swift-SDK -sdk appletvos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty
+    xcodebuild build -scheme OpenPanel-Swift-SDK -sdk appletvos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty && exit ${PIPESTATUS[0]}
 
     # echo "--- Building for watchOS Device ---"
     # xcodebuild build -scheme OpenPanel -sdk watchos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty
