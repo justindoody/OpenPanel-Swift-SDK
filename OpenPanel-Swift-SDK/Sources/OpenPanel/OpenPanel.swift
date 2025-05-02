@@ -83,7 +83,7 @@ internal class DeviceInfo {
             _ = semaphore.wait(timeout: .now() + 1.0)
             
             if userAgent.isEmpty {
-                userAgent = "(iPhone; U)"
+                userAgent = "Mozilla/5.0 (iPhone; U)"
             }
 
             userAgent += " OpenPanel/\(OpenPanel.sdkVersion)"
