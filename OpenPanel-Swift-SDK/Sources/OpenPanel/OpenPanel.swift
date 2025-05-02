@@ -1,6 +1,8 @@
 import Foundation
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 import UIKit
+#endif
+#if os(iOS)
 import WebKit
 #elseif os(macOS)
 import AppKit
@@ -24,7 +26,7 @@ internal class DeviceInfo {
         return Bundle.main.bundlePath.hasSuffix(".appex")
     }
     
-    #if canImport(UIKit)
+    #if os(iOS)
     private static func getiOSUserAgent() -> String {
         if !isRunningInExtension() {
             let webView = WKWebView(frame: .zero)
@@ -54,7 +56,9 @@ internal class DeviceInfo {
             return getBasicUserAgent()
         }
     }
-
+    #endif
+    
+    #if canImport(UIKit)
     private static func getBasicUserAgent() -> String {
         let device = UIDevice.current
         let systemVersion = device.systemVersion
@@ -487,7 +491,7 @@ public class OpenPanel {
                 if let global = shared._global {
                     var mergedProperties = global
                     if let payloadProperties = payload.properties {
-                        mergedProperties.merge(payloadProperties) { (_, new) in (new as AnyObject).value }
+                        mergedProperties.merge(payloadProperties) { (_, new) in new }
                     }
                     updatedPayload.properties = mergedProperties.mapValues { AnyCodable($0) }
                 }
