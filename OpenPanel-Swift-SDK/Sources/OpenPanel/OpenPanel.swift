@@ -56,11 +56,12 @@ internal class DeviceInfo {
     static func getiOSInfo() -> Info {
         let device = UIDevice.current
 
+        // TODO: Get specific iPhone model
         return Info(
             os: "iOS",
             osVersion: device.systemVersion,
             device: "mobile",
-            model: "iPhone TEMP")
+            model: "iPhone")
     }
 
     private static func getiOSUserAgent(_ info: Info) -> String {
@@ -121,7 +122,7 @@ internal class DeviceInfo {
         let version = versionParts.count > 1 ? versionParts[1] : "Unknown"
         
         return Info(
-            os: "macOS",
+            os: "Mac OS",
             osVersion: version,
             device: "desktop",
             model: getMacModelIdentifier() ?? "Unknown")
@@ -471,6 +472,7 @@ public class OpenPanel {
                 shared._global = [:]
             }
             shared._global?["__brand"] = info.brand
+            shared._global?["__device"] = info.device
             shared._global?["__os"] = info.os
             shared._global?["__osVersion"] = info.osVersion
             shared._global?["__model"] = info.model
