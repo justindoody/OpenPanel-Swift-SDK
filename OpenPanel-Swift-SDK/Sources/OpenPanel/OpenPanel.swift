@@ -17,6 +17,8 @@ internal class DeviceInfo {
         return getiOSUserAgent()
         #elseif os(macOS)
         return getMacOSUserAgent()
+        #elseif os(tvOS)
+        return getTvOSUserAgent()
         #else
         return getGenericUserAgent()
         #endif
@@ -109,6 +111,22 @@ internal class DeviceInfo {
         let osName = ProcessInfo.processInfo.operatingSystemVersionString
         return "OpenPanel/\(OpenPanel.sdkVersion) (\(osName))"
     }
+
+    #if os(tvOS)
+    private static func getTvOSUserAgent() -> String {
+        let device = UIDevice.current
+        let systemVersion = device.systemVersion
+        let model = device.model
+        let systemName = device.systemName
+
+        // Construct a user agent string for tvOS
+        var userAgent = "Mozilla/5.0 (Apple TV; \(model); \(systemName) \(systemVersion.replacingOccurrences(of: ".", with: "_"))) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/\(systemVersion)"
+
+        userAgent += " OpenPanel/\(OpenPanel.sdkVersion)"
+
+        return userAgent
+    }
+    #endif
 }
 
 // MARK: - Payload Types
