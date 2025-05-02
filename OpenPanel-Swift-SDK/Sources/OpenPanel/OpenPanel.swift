@@ -12,13 +12,37 @@ import WebKit
 // MARK: - DeviceInfo
 
 internal class DeviceInfo {
+    struct Info {
+        var brand: String = "Apple"
+        var os: String // tvOS
+        var osVersion: String // 18.4
+        var device: String // smarttv
+        var model: String // AppleTV6,2
+        
+        var osVersionUnderscored: String {
+            self.osVersion.replacingOccurrences(of: ".", with: "_")
+        }
+    }
+    
+    static func getInfo() -> Info {
+        #if os(iOS)
+        return getiOSInfo()
+        #elseif os(macOS)
+        return getMacOSInfo()
+        #elseif os(tvOS)
+        return getTvOSInfo()
+        #else
+        return getGenericInfo()
+        #endif
+    }
+
     static func getUserAgent() -> String {
         #if os(iOS)
-        return getiOSUserAgent()
+        return getiOSUserAgent(getiOSInfo())
         #elseif os(macOS)
-        return getMacOSUserAgent()
+        return getMacOSUserAgent(getMacOSInfo)
         #elseif os(tvOS)
-        return getTvOSUserAgent()
+        return getTvOSUserAgent(getTvOSInfo())
         #else
         return getGenericUserAgent()
         #endif
@@ -29,6 +53,16 @@ internal class DeviceInfo {
     }
     
     #if os(iOS)
+    static func getiOSInfo() -> Info {
+        let device = UIDevice.current
+
+        return Info(
+            os: "iOS",
+            osVersion: device.systemVersion,
+            device: "mobile",
+            model: "iPhone TEMP")
+    }
+
     private static func getiOSUserAgent() -> String {
         if !isRunningInExtension() {
             let webView = WKWebView(frame: .zero)
@@ -58,6 +92,8 @@ internal class DeviceInfo {
             return getBasicUserAgent()
         }
     }
+    
+    
     #endif
     
     #if canImport(UIKit)
@@ -78,19 +114,21 @@ internal class DeviceInfo {
     #endif
 
     #if os(macOS)
-    private static func getMacOSUserAgent() -> String {
+    static func getMacOSInfo() -> Info {
         let processInfo = ProcessInfo.processInfo
         let osVersion = processInfo.operatingSystemVersionString
         let versionParts = osVersion.components(separatedBy: " ")
         let version = versionParts.count > 1 ? versionParts[1] : "Unknown"
-        let versionFormatted = version.replacingOccurrences(of: ".", with: "_")
-
-        var osPart = "Macintosh; Intel Mac OS X \(versionFormatted)"
-        if let modelIdentifier = getMacModelIdentifier() {
-            osPart += "; \(modelIdentifier)"
-        }
-
-        let userAgent = "Mozilla/5.0 (\(osPart)) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
+        
+        return Info(
+            os: "macOS",
+            osVersion: version,
+            device: "desktop",
+            model: getMacModelIdentifier() ?? "Unknown")
+    }
+    
+    private static func getMacOSUserAgent(_ info: Info) -> String {
+        let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X \(info.osVersionUnderscored); \(info.model)) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 
         return userAgent + " OpenPanel/\(OpenPanel.sdkVersion)"
     }
@@ -111,16 +149,39 @@ internal class DeviceInfo {
         let osName = ProcessInfo.processInfo.operatingSystemVersionString
         return "OpenPanel/\(OpenPanel.sdkVersion) (\(osName))"
     }
+    
+    static func getGenericInfo() -> Info {
+        return Info(
+            os: "Unknown",
+            osVersion: "Unknown",
+            device: "Unknown",
+            model: "Unknown")
+    }
 
     #if os(tvOS)
-    private static func getTvOSUserAgent() -> String {
+    static func getAppleTVModelIdentifier() -> String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let mirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = mirror.children.reduce(into: "") { id, child in
+            guard let byte = child.value as? Int8, byte != 0 else { return }
+            id.append(String(UnicodeScalar(UInt8(byte))))
+        }
+        return identifier
+    }
+    
+    static func getTvOSInfo() -> Info {
         let device = UIDevice.current
-        let systemVersion = device.systemVersion
-        let model = device.model
-        let systemName = device.systemName
-
+        return Info(
+            os: "tvOS",
+            osVersion: device.systemVersion,
+            device: "smarttv",
+            model: getAppleTVModelIdentifier())
+    }
+    
+    private static func getTvOSUserAgent(_ info: Info) -> String {
         // Construct a user agent string for tvOS
-        var userAgent = "Mozilla/5.0 (Apple TV; \(model); \(systemName) \(systemVersion.replacingOccurrences(of: ".", with: "_"))) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/\(systemVersion)"
+        var userAgent = "Mozilla/5.0 (Apple TV; \(info.model); \(info.os) \(info.osVersionUnderscored)) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/\(info.osVersion)"
 
         userAgent += " OpenPanel/\(OpenPanel.sdkVersion)"
 
@@ -403,16 +464,18 @@ public class OpenPanel {
             defaultHeaders: defaultHeaders
         ))
 
-        #if os(macOS)
-        if let modelIdentifier = DeviceInfo.getMacModelIdentifier() {
-            shared.globalQueue.async(flags: .barrier) {
-                if shared._global == nil {
-                    shared._global = [:]
-                }
-                shared._global?["__model"] = modelIdentifier
+        
+        let info = DeviceInfo.getInfo()
+        shared.globalQueue.async(flags: .barrier) {
+            if shared._global == nil {
+                shared._global = [:]
             }
+            shared._global?["__brand"] = info.brand
+            shared._global?["__os"] = info.os
+            shared._global?["__osVersion"] = info.osVersion
+            shared._global?["__model"] = info.model
         }
-        #endif
+        
 
         if options.automaticTracking == true {
             shared.setupAutomaticTracking()
